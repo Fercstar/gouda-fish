@@ -35,6 +35,8 @@
             border-radius: 15px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
             background: #81d4fa;
+            max-width: 100%;
+            height: auto;
         }
 
         #win-message {
@@ -42,29 +44,78 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 77, 64, 0.9);
+            background: rgba(0, 77, 64, 0.95);
             color: white;
             padding: 30px 50px;
             border-radius: 20px;
             text-align: center;
-            font-size: 2em;
+            font-size: 1.5em;
             display: none;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        #win-message h2 {
+            margin-top: 0;
+            font-size: 2em;
+            color: #ffeb3b;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            margin: 20px 0;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         button {
-            margin-top: 20px;
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 1.2em;
             background: #ffab40;
             border: none;
             border-radius: 10px;
             cursor: pointer;
             color: white;
+            transition: background 0.3s;
         }
 
         button:hover {
             background: #ff6f00;
+        }
+
+        #view-reward-btn {
+            background: #4caf50;
+        }
+
+        #view-reward-btn:hover {
+            background: #388e3c;
+        }
+
+        #reward-section {
+            display: none;
         }
     </style>
 </head>
@@ -75,66 +126,122 @@
     <canvas id="gameCanvas" width="600" height="600"></canvas>
 
     <div id="win-message">
-        <div>You Win!<br>Gouda Escaped the Maze!</div>
-        <button onclick="restartGame()">Play Again</button>
+        <h2>You Win!<br>Gouda Escaped the Maze!</h2>
+        <p>Congratulations! You've guided Gouda home safely.</p>
+
+        <div id="reward-section">
+            <p><strong>Your Reward: The Legendary Gouda Fish Video!</strong></p>
+            <div class="video-container">
+                <iframe
+                    src="https://www.youtube-nocookie.com/embed/Pl9MbcoJA6U?autoplay=1&mute=1&loop=1&playlist=Pl9MbcoJA6U&playsinline=1&rel=0&controls=1"
+                    allow="autoplay; fullscreen" allowfullscreen
+                    referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            </div>
+            <p>Enjoy the epic tale of Gouda Fish!</p>
+        </div>
+
+        <div class="buttons">
+            <button id="view-reward-btn">View Your Reward</button>
+            <button onclick="restartGame()">Play Again</button>
+        </div>
     </div>
 
     <script>
-        // Get canvas and context
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const winMessage = document.getElementById('win-message');
+        const viewRewardBtn = document.getElementById('view-reward-btn');
+        const rewardSection = document.getElementById('reward-section');
 
-        // Game constants
-        const CELL_SIZE = 40;                   // Each maze cell is 40x40 pixels
-        const COLS = canvas.width / CELL_SIZE;  // 15
-        const ROWS = canvas.height / CELL_SIZE; // 15
+        const CELL_SIZE = 40;
+        const COLS = canvas.width / CELL_SIZE;
+        const ROWS = canvas.height / CELL_SIZE;
 
-        // Hard-coded maze (1 = wall, 0 = open path)
-        // Start: (1,1), Exit: (13,13)
-        const maze = [
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-            [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-            [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
-            [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
-            [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-            [1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-            [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-            [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-            [1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
-            [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-            [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        // 10 mazes (3 unique + placeholders – replace with more if desired)
+        const mazes = [
+            // Maze 0 (original)
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+                [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+                [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+                [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
+                [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+                [1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+                [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+                [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+                [1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
+                [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+                [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            // Maze 1
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1],
+                [1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1],
+                [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+                [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+                [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
+                [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+                [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+                [1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+                [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+                [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
+                [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            // Maze 2
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1],
+                [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+                [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+                [1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1],
+                [1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+                [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
+                [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+                [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+                [1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+                [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+                [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ]
         ];
 
-        // Player (Gouda the Fish)
+        let currentMaze = mazes[Math.floor(Math.random() * mazes.length)];
+
         let player = {
-            x: 1 * CELL_SIZE + CELL_SIZE / 2,   // center of start cell
+            x: 1 * CELL_SIZE + CELL_SIZE / 2,
             y: 1 * CELL_SIZE + CELL_SIZE / 2,
             radius: 15,
             speed: 3,
-            direction: 'right',                 // right, left, up, down
+            direction: 'right',
             moving: false,
-            bubbleTrail: []                     // array of past positions for bubbles
+            bubbleTrail: []
         };
 
-        // Exit position (center of bottom-right open cell)
         const exit = {
             x: 13 * CELL_SIZE + CELL_SIZE / 2,
             y: 13 * CELL_SIZE + CELL_SIZE / 2,
             radius: 25
         };
 
-        // Keyboard state
         const keys = {};
-
         window.addEventListener('keydown', e => { keys[e.key] = true; });
         window.addEventListener('keyup', e => { keys[e.key] = false; });
 
-        // Main game loop
+        viewRewardBtn.addEventListener('click', () => {
+            rewardSection.style.display = 'block';
+            viewRewardBtn.style.display = 'none';
+        });
+
         function gameLoop() {
             update();
             draw();
@@ -146,46 +253,26 @@
             let nextY = player.y;
             player.moving = false;
 
-            if (keys['ArrowRight']) {
-                nextX += player.speed;
-                player.direction = 'right';
-                player.moving = true;
-            }
-            if (keys['ArrowLeft']) {
-                nextX -= player.speed;
-                player.direction = 'left';
-                player.moving = true;
-            }
-            if (keys['ArrowDown']) {
-                nextY += player.speed;
-                player.direction = 'down';
-                player.moving = true;
-            }
-            if (keys['ArrowUp']) {
-                nextY -= player.speed;
-                player.direction = 'up';
-                player.moving = true;
-            }
+            if (keys['ArrowRight']) { nextX += player.speed; player.direction = 'right'; player.moving = true; }
+            if (keys['ArrowLeft']) { nextX -= player.speed; player.direction = 'left'; player.moving = true; }
+            if (keys['ArrowDown']) { nextY += player.speed; player.direction = 'down'; player.moving = true; }
+            if (keys['ArrowUp']) { nextY -= player.speed; player.direction = 'up'; player.moving = true; }
 
-            // Simple collision: check if proposed position is inside a wall
             if (!isColliding(nextX, nextY)) {
                 player.x = nextX;
                 player.y = nextY;
             }
 
-            // Add bubble to trail when moving
             if (player.moving && Math.random() < 0.3) {
                 player.bubbleTrail.push({ x: player.x, y: player.y, alpha: 1 });
             }
 
-            // Update bubble trail (fade out and move up)
             player.bubbleTrail = player.bubbleTrail.filter(b => {
                 b.y -= 1;
                 b.alpha -= 0.02;
                 return b.alpha > 0;
             });
 
-            // Check win condition
             const dist = Math.hypot(player.x - exit.x, player.y - exit.y);
             if (dist < player.radius + exit.radius - 10) {
                 winMessage.style.display = 'block';
@@ -193,7 +280,6 @@
         }
 
         function isColliding(x, y) {
-            // Check the four corners of the player's bounding box
             const radius = player.radius;
             const points = [
                 { x: x - radius, y: y - radius },
@@ -205,7 +291,7 @@
             for (let p of points) {
                 const col = Math.floor(p.x / CELL_SIZE);
                 const row = Math.floor(p.y / CELL_SIZE);
-                if (maze[row] && maze[row][col] === 1) {
+                if (currentMaze[row] && currentMaze[row][col] === 1) {
                     return true;
                 }
             }
@@ -213,17 +299,14 @@
         }
 
         function draw() {
-            // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw ocean background gradient
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             gradient.addColorStop(0, '#81d4fa');
             gradient.addColorStop(1, '#40c4ff');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw some static bubbles in background
             for (let i = 0; i < 20; i++) {
                 const x = (i * 137) % canvas.width;
                 const y = (i * 89) % canvas.height + 100;
@@ -233,29 +316,22 @@
                 ctx.fill();
             }
 
-            // Draw sand at bottom
             ctx.fillStyle = '#ffcc80';
             ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
 
-            // Draw maze walls (coral/seaweed style)
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
-                    if (maze[row][col] === 1) {
+                    if (currentMaze[row][col] === 1) {
                         const x = col * CELL_SIZE;
                         const y = row * CELL_SIZE;
-
-                        // Coral-like look
                         ctx.fillStyle = '#004d40';
                         ctx.fillRect(x + 5, y + 5, CELL_SIZE - 10, CELL_SIZE - 10);
-
-                        // Add lighter highlights
                         ctx.fillStyle = '#00695c';
                         ctx.fillRect(x + 10, y + 10, CELL_SIZE - 20, CELL_SIZE - 20);
                     }
                 }
             }
 
-            // Draw exit (home cave)
             ctx.fillStyle = '#3e2723';
             ctx.beginPath();
             ctx.arc(exit.x, exit.y, exit.radius, 0, Math.PI * 2);
@@ -264,14 +340,12 @@
             ctx.lineWidth = 5;
             ctx.stroke();
 
-            // Draw treasure sparkle
             ctx.fillStyle = '#ffeb3b';
             ctx.beginPath();
             ctx.arc(exit.x - 10, exit.y - 10, 5, 0, Math.PI * 2);
             ctx.arc(exit.x + 10, exit.y - 8, 4, 0, Math.PI * 2);
             ctx.fill();
 
-            // Draw bubble trail
             player.bubbleTrail.forEach(b => {
                 ctx.fillStyle = `rgba(200, 240, 255, ${b.alpha})`;
                 ctx.beginPath();
@@ -279,27 +353,18 @@
                 ctx.fill();
             });
 
-            // Draw Gouda the Fish
             ctx.save();
             ctx.translate(player.x, player.y);
 
-            // Rotate or flip based on direction
-            if (player.direction === 'left') {
-                ctx.scale(-1, 1);  // flip horizontally
-            } else if (player.direction === 'up') {
-                ctx.rotate(-Math.PI / 2);
-            } else if (player.direction === 'down') {
-                ctx.rotate(Math.PI / 2);
-            }
-            // 'right' is default, no transform needed
+            if (player.direction === 'left') ctx.scale(-1, 1);
+            else if (player.direction === 'up') ctx.rotate(-Math.PI / 2);
+            else if (player.direction === 'down') ctx.rotate(Math.PI / 2);
 
-            // Body (orange oval)
             ctx.fillStyle = '#ff9800';
             ctx.beginPath();
             ctx.ellipse(0, 0, player.radius + 5, player.radius, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Tail fin
             ctx.fillStyle = '#ff6f00';
             ctx.beginPath();
             ctx.moveTo(-player.radius - 5, 0);
@@ -310,7 +375,6 @@
             ctx.closePath();
             ctx.fill();
 
-            // Eye
             ctx.fillStyle = 'white';
             ctx.beginPath();
             ctx.arc(player.radius / 2, -player.radius / 3, 6, 0, Math.PI * 2);
@@ -320,7 +384,6 @@
             ctx.arc(player.radius / 2 + 2, -player.radius / 3, 3, 0, Math.PI * 2);
             ctx.fill();
 
-            // Smile
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -331,14 +394,16 @@
         }
 
         function restartGame() {
+            currentMaze = mazes[Math.floor(Math.random() * mazes.length)];
             player.x = 1 * CELL_SIZE + CELL_SIZE / 2;
             player.y = 1 * CELL_SIZE + CELL_SIZE / 2;
             player.direction = 'right';
             player.bubbleTrail = [];
             winMessage.style.display = 'none';
+            rewardSection.style.display = 'none';
+            viewRewardBtn.style.display = 'block';
         }
 
-        // Start the game
         gameLoop();
     </script>
 </body>
