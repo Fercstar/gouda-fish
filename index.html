@@ -40,28 +40,34 @@
         }
 
         #win-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0, 77, 64, 0.95);
             color: white;
-            padding: 30px 50px;
-            border-radius: 20px;
+            padding: 20px;
+            box-sizing: border-box;
             text-align: center;
             font-size: 1.5em;
             display: none;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
-            max-width: 90%;
-            max-height: 90%;
             overflow-y: auto;
             z-index: 10;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
         }
 
         #win-message h2 {
-            margin-top: 0;
-            font-size: 2em;
+            margin: 20px 0 10px;
+            font-size: 2.2em;
             color: #ffeb3b;
+        }
+
+        #win-message p {
+            margin: 10px 0;
+            max-width: 90%;
         }
 
         .video-container {
@@ -70,7 +76,8 @@
             /* 16:9 aspect ratio */
             height: 0;
             overflow: hidden;
-            max-width: 100%;
+            max-width: 95%;
+            width: 95%;
             margin: 20px 0;
         }
 
@@ -89,11 +96,12 @@
             gap: 20px;
             flex-wrap: wrap;
             justify-content: center;
+            margin: 20px 0;
         }
 
         button {
-            padding: 12px 24px;
-            font-size: 1.2em;
+            padding: 14px 28px;
+            font-size: 1.4em;
             background: #ffab40;
             border: none;
             border-radius: 10px;
@@ -116,13 +124,15 @@
 
         #reward-section {
             display: none;
+            width: 100%;
         }
 
         #controls {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 20px;
+            margin: 20px 0;
+            width: 100%;
         }
 
         .control-row {
@@ -131,18 +141,18 @@
         }
 
         .control-btn {
-            width: 60px;
-            height: 60px;
-            font-size: 2em;
+            width: 70px;
+            height: 70px;
+            font-size: 2.5em;
             background: #0288d1;
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 15px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
             user-select: none;
             -webkit-user-select: none;
             touch-action: manipulation;
@@ -154,36 +164,51 @@
         }
 
         .spacer {
-            width: 60px;
+            width: 70px;
         }
 
         @media (max-width: 600px) {
             h1 {
-                font-size: 2em;
+                font-size: 2.2em;
             }
 
             p.instructions {
                 font-size: 1.2em;
             }
 
-            canvas {
-                width: 100%;
-                height: auto;
-            }
-
-            #win-message {
-                font-size: 1.2em;
-                padding: 20px;
-            }
-
             #win-message h2 {
-                font-size: 1.5em;
+                font-size: 1.8em;
+            }
+
+            #win-message p {
+                font-size: 1.1em;
+            }
+
+            button {
+                padding: 12px 24px;
+                font-size: 1.2em;
             }
 
             .control-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 1.5em;
+                width: 60px;
+                height: 60px;
+                font-size: 2em;
+            }
+
+            .spacer {
+                width: 60px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .control-btn {
+                width: 55px;
+                height: 55px;
+                font-size: 1.8em;
+            }
+
+            .spacer {
+                width: 55px;
             }
         }
     </style>
@@ -249,59 +274,14 @@
         const COLS = canvas.width / CELL_SIZE;
         const ROWS = canvas.height / CELL_SIZE;
 
-        // 10 mazes (3 unique + placeholders)
+        // 10 mazes (3 unique + 7 placeholders)
         const mazes = [
-            [
-                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-                [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-                [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
-                [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-                [1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-                [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-                [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-                [1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
-                [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-                [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-            ],
-            [
-                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1],
-                [1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1],
-                [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-                [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
-                [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-                [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-                [1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-                [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
-                [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-            ],
-            [
-                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1],
-                [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
-                [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-                [1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1],
-                [1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
-                [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-                [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-                [1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-                [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
-                [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-            ]
+            // Maze 0
+            [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1], [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1], [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1], [1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1], [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1], [1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1], [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
+            // Maze 1
+            [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1], [1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1], [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1], [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1], [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1], [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], [1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1], [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1], [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1], [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
+            // Maze 2
+            [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1], [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1], [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1], [1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1], [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1], [1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1], [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1], [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1], [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], [1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1], [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1], [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
         ];
 
         let currentMaze = mazes[Math.floor(Math.random() * mazes.length)];
@@ -322,30 +302,29 @@
             radius: 25
         };
 
-        // Input handling (keyboard + touch)
         const keys = {};
         window.addEventListener('keydown', e => { keys[e.key] = true; });
         window.addEventListener('keyup', e => { keys[e.key] = false; });
 
         // Touch controls
-        upBtn.addEventListener('touchstart', () => { keys['ArrowUp'] = true; });
-        upBtn.addEventListener('touchend', () => { keys['ArrowUp'] = false; });
-        downBtn.addEventListener('touchstart', () => { keys['ArrowDown'] = true; });
-        downBtn.addEventListener('touchend', () => { keys['ArrowDown'] = false; });
-        leftBtn.addEventListener('touchstart', () => { keys['ArrowLeft'] = true; });
-        leftBtn.addEventListener('touchend', () => { keys['ArrowLeft'] = false; });
-        rightBtn.addEventListener('touchstart', () => { keys['ArrowRight'] = true; });
-        rightBtn.addEventListener('touchend', () => { keys['ArrowRight'] = false; });
+        upBtn.addEventListener('touchstart', e => { e.preventDefault(); keys['ArrowUp'] = true; });
+        upBtn.addEventListener('touchend', e => { e.preventDefault(); keys['ArrowUp'] = false; });
+        downBtn.addEventListener('touchstart', e => { e.preventDefault(); keys['ArrowDown'] = true; });
+        downBtn.addEventListener('touchend', e => { e.preventDefault(); keys['ArrowDown'] = false; });
+        leftBtn.addEventListener('touchstart', e => { e.preventDefault(); keys['ArrowLeft'] = true; });
+        leftBtn.addEventListener('touchend', e => { e.preventDefault(); keys['ArrowLeft'] = false; });
+        rightBtn.addEventListener('touchstart', e => { e.preventDefault(); keys['ArrowRight'] = true; });
+        rightBtn.addEventListener('touchend', e => { e.preventDefault(); keys['ArrowRight'] = false; });
 
-        // Mouse fallback for touch buttons (useful for testing on desktop)
-        upBtn.addEventListener('mousedown', () => { keys['ArrowUp'] = true; });
-        upBtn.addEventListener('mouseup', () => { keys['ArrowUp'] = false; });
-        downBtn.addEventListener('mousedown', () => { keys['ArrowDown'] = true; });
-        downBtn.addEventListener('mouseup', () => { keys['ArrowDown'] = false; });
-        leftBtn.addEventListener('mousedown', () => { keys['ArrowLeft'] = true; });
-        leftBtn.addEventListener('mouseup', () => { keys['ArrowLeft'] = false; });
-        rightBtn.addEventListener('mousedown', () => { keys['ArrowRight'] = true; });
-        rightBtn.addEventListener('mouseup', () => { keys['ArrowRight'] = false; });
+        // Mouse fallback
+        upBtn.addEventListener('mousedown', () => keys['ArrowUp'] = true);
+        upBtn.addEventListener('mouseup', () => keys['ArrowUp'] = false);
+        downBtn.addEventListener('mousedown', () => keys['ArrowDown'] = true);
+        downBtn.addEventListener('mouseup', () => keys['ArrowDown'] = false);
+        leftBtn.addEventListener('mousedown', () => keys['ArrowLeft'] = true);
+        leftBtn.addEventListener('mouseup', () => keys['ArrowLeft'] = false);
+        rightBtn.addEventListener('mousedown', () => keys['ArrowRight'] = true);
+        rightBtn.addEventListener('mouseup', () => keys['ArrowRight'] = false);
 
         viewRewardBtn.addEventListener('click', () => {
             rewardSection.style.display = 'block';
@@ -385,7 +364,7 @@
 
             const dist = Math.hypot(player.x - exit.x, player.y - exit.y);
             if (dist < player.radius + exit.radius - 10) {
-                winMessage.style.display = 'block';
+                winMessage.style.display = 'flex'; // use flex to enable centering
             }
         }
 
